@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Manager</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; padding: 0; background-color: #f4f4f4; }
+        h2 { text-align: center; }
+        #contactForm, #searchBar { margin: 20px auto; text-align: center; }
+        input { padding: 8px; margin: 5px; border-radius: 5px; border: 1px solid #ccc; }
+        button { padding: 8px 12px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        table { width: 80%; margin: 20px auto; border-collapse: collapse; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: center; }
+        th { background-color: #4CAF50; color: white; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h2>Contact Manager</h2>
+
+    <div id="searchBar">
+        <input type="text" id="searchInput" placeholder="Search Contacts...">
+        <button onclick="fetchContacts()">Search</button>
+    </div>
+
+    <div id="contactForm">
+        <input type="text" id="name" placeholder="Name">
+        <input type="text" id="phone" placeholder="Phone">
+        <input type="email" id="email" placeholder="Email">
+        <button onclick="addContact()">Add Contact</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="contactList"></tbody>
+    </table>
+
+    <script>
+        function fetchContacts() {
+            const searchQuery = document.getElementById('searchInput').value;
+            fetch(`/contacts?search=${searchQuery}`)
+                .then(response => response.json())
+                .then(contacts => {
+                    const contactList = document.getElementById('contactList');
+                    contactList.innerHTML = '';
+                    contacts.forEach(contact => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${contact.name}</td>
+                            <td>${contact.phone}</td>
+                            <td>${contact.email}</td>
+                            <td><button onclick="deleteContact(${contact.id})">Delete</button></td>
+                        `;
+                        contactList.appendChild(row);
+                    });
+                });
+        }
+
+        function addContact() {
+            const name = document.getElementById('name').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const email = document.getElementById('email').value.trim();
+
+            if (name && phone && email) {
+                fetch('/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, email })
+                })
+                .then(response => response.json())
+                .then(() => {
+                    document.getElementById('name').value = '';
+                    document.getElementById('phone').value = '';
+                    document.getElementById('email').value = '';
+                    fetchContacts();
+                });
+            }
+        }
+
+        function deleteContact(contactId) {
+            fetch(`/delete/${contactId}`, { method: 'DELETE' })
+                .then(() => fetchContacts());
+        }
+
+        window.onload = fetchContacts;
+    </script>
+</body>
+</html>
+
